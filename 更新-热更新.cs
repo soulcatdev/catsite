@@ -49,8 +49,8 @@ public class HotUpdateManager : MonoBehaviour
                 string content = await client.GetStringAsync("https://www.example.com/");
                 Debug.Log("网页内容获取成功");
 
-                // 提取✦✦之间的内容（下载链接）
-                Match match = Regex.Match(content, "✦(.*?)✦");
+                // 提取⚃⚃之间的内容（下载链接）
+                Match match = Regex.Match(content, "⚃(.*?)⚃");
                 if (match.Success)
                 {
                     downloadUrl = match.Groups[1].Value;
