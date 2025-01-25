@@ -1,95 +1,103 @@
-using UnityEngine;
-using TMPro; // 引入 TextMeshPro 命名空间
+using System;
+using System.IO;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using UnityEngine.Networking;
+using UnityEngine;
+using UnityEngine.UI;
 
-public class CompareWebsiteNumber : MonoBehaviour
+public class DataComparer : MonoBehaviour
 {
-    public TMP_Text textComponent; // 引用 TextMeshPro 文本组件
-    public GameObject plane;       // 引用 Plane 对象
+    public Text progressText;  // UI Text for showing progress
+    public GameObject hiddenPanel;  // Panel to be shown/hidden
 
     private async void Start()
     {
-        plane.SetActive(false); // 确保 Plane 在开始时隐藏
-        await FetchAndCompareNumber();
-    }
+        string filePath = "path_to_your_file.txt"; // Replace with your txt file path
+        string url = "your_target_webpage_url"; // Replace with your target URL
 
-    private async Task FetchAndCompareNumber()
-    {
-        string url = "https://www.examples.com";  // 网站 URL
-        string webContent = await GetWebsiteContent(url); // 获取网站内容
+        // Step 1: Read numbers from the txt file
+        var (a, b) = ReadNumbersFromFile(filePath);
+        
+        // Step 2: Fetch the webpage source and extract numbers a1 and b1
+        var (a1, b1) = await FetchNumbersFromWebPage(url);
 
-        if (!string.IsNullOrEmpty(webContent)) // 确保网站内容有效
+        // Step 3: Compare and decide what to do
+        if (a < a1)
         {
-            // 提取网站中的数字（获取最新版本号，不支持小数！）
-            int websiteNumber = ExtractNumberBetweenDice(webContent); 
-
-            if (int.TryParse(textComponent.text, out int textNumber)) // 获取 TextMeshPro 中的数字
-            {
-                Debug.Log($"网站中的数字: {websiteNumber}, 文本中的数字: {textNumber}");
-
-                // 比较两个数字（版本校对）
-                if (websiteNumber > textNumber)
-                {
-                    plane.SetActive(true); // 如果网站中的数字大于文本数字，则显示 Plane
-                }
-            }
-            else
-            {
-                Debug.LogError("文本组件中没有有效的数字！");
-            }
+            // If a < a1, show the hidden panel and stop further comparisons
+            hiddenPanel.SetActive(true);
+            return;
         }
-        else
+
+        if (a == a1)
         {
-            Debug.LogError("无法获取网站内容！");
+            if (b < b1)
+            {
+                // If a == a1 and b < b1, show the hidden panel
+                hiddenPanel.SetActive(true);
+            }
         }
     }
 
-    // 获取网站源码
-    private async Task<string> GetWebsiteContent(string url)
+    private (int, int) ReadNumbersFromFile(string filePath)
     {
-        using (UnityWebRequest request = UnityWebRequest.Get(url))
+        int a = 0, b = 0;
+        string fileContent = File.ReadAllText(filePath);
+
+        // Regex to match numbers between vision//...// and note//...//
+        var visionMatch = Regex.Match(fileContent, @"vision\/\/(\d+)");
+        var noteMatch = Regex.Match(fileContent, @"note\/\/(\d+)");
+
+        if (visionMatch.Success)
+        {
+            a = int.Parse(visionMatch.Groups[1].Value);
+        }
+        if (noteMatch.Success)
+        {
+            b = int.Parse(noteMatch.Groups[1].Value);
+        }
+
+        return (a, b);
+    }
+
+    private async Task<(int, int)> FetchNumbersFromWebPage(string url)
+    {
+        int a1 = 0, b1 = 0;
+
+        using (HttpClient client = new HttpClient())
         {
             try
             {
-                var operation = request.SendWebRequest();
+                string pageContent = await client.GetStringAsync(url);
 
-                while (!operation.isDone)
-                    await Task.Yield();
+                // Regex to match numbers between ✦...✦ and ●...●
+                var a1Match = Regex.Match(pageContent, @"✦(\d+)✦");
+                var b1Match = Regex.Match(pageContent, @"●(\d+)●");
 
-                if (request.result == UnityWebRequest.Result.Success)
+                if (a1Match.Success)
                 {
-                    return request.downloadHandler.text; // 返回网站源码
+                    a1 = int.Parse(a1Match.Groups[1].Value);
                 }
-                else
+                if (b1Match.Success)
                 {
-                    Debug.LogError($"请求失败: {request.error}");
-                    return null;
+                    b1 = int.Parse(b1Match.Groups[1].Value);
+                }
+
+                // Update progress text (simulating progress during the task)
+                for (int i = 0; i <= 100; i++)
+                {
+                    progressText.text = $"Loading: {i}%";
+                    await Task.Delay(50);  // Simulate some delay for the progress
                 }
             }
-            catch (System.Exception e)
+            catch (Exception ex)
             {
-                Debug.LogError($"请求异常: {e.Message}");
-                return null;
+                Debug.LogError($"Error fetching webpage: {ex.Message}");
             }
         }
-    }
 
-    // 提取 ⚅ 和 ⚅ 之间的数字
-    private int ExtractNumberBetweenDice(string content)
-    {
-        // 使用正则表达式匹配 ⚅ 与 ⚅ 之间的数字
-        Match match = Regex.Match(content, @"⚅\s*(\d+)\s*⚅");
-
-        if (match.Success && int.TryParse(match.Groups[1].Value, out int number))
-        {
-            return number; // 返回匹配到的数字
-        }
-        else
-        {
-            Debug.LogError("未找到 ⚅ 和 ⚅ 之间的数字");
-            return 0; // 返回 0 代表没有匹配到数字
-        }
+        return (a1, b1);
     }
 }
+
