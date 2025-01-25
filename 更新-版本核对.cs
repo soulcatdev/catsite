@@ -14,7 +14,7 @@ public class DataComparer : MonoBehaviour
     private async void Start()
     {
         string filePath = "path_to_your_file.txt"; // Replace with your txt file path
-        string url = "your_target_webpage_url"; // Replace with your target URL
+        string url = "https://github.com/soulcatdev/catsite/blob/C%23/checker.txt"; // Replace with your target URL
 
         // Step 1: Read numbers from the txt file
         var (a, b) = ReadNumbersFromFile(filePath);
