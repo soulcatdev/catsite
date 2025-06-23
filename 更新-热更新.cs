@@ -5,6 +5,8 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.IO;
 
+//大概原理是通过抓取网页源码-提取两个特殊字符【之间就是公告（或者用于比较的版本数字）】//
+
 public class HotUpdateManager : MonoBehaviour
 {
     [Header("UI按钮")]
