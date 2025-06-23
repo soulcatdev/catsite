@@ -1,3 +1,6 @@
+//THESE CODE WAS WORTE BY AIDYN  NOT SOULCAT....
+
+
 using Photon.Pun;
 using UnityEngine;
 using UnityEngine.UI;
